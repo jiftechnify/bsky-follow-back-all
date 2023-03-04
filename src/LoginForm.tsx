@@ -1,4 +1,5 @@
 import { useState } from "react";
+import styles from './LoginForm.module.css';
 import type { Crendentials } from "./types";
 
 type LoginFormProps = {
@@ -14,7 +15,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickLogin }) => {
       <div>
         <input
           type="email"
-          placeholder="E-mail Address"
+          placeholder="E-mail Address or Handle"
           onChange={(e) => setEmail(e.target.value)}
         ></input>
       </div>
@@ -25,7 +26,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickLogin }) => {
           onChange={(e) => setPassword(e.target.value)}
         ></input>
       </div>
-      <button type="button" onClick={() => onClickLogin({ email, password })}>
+      <button className={styles.btnLogin} type="button" onClick={() => onClickLogin({ email, password })}>
         Login
       </button>
     </form>

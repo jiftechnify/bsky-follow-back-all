@@ -5,10 +5,12 @@ import { LoginForm } from "./LoginForm";
 import type { Crendentials } from "./types";
 
 import styles from "./App.module.css";
+import octocat from "./assets/github-mark.svg";
 
 type GraphActor = AppBskyActorRef.WithInfo;
 
 const atpAgent = new AtpAgent({ service: "https://bsky.social" });
+
 const bsky = atpAgent.api.app.bsky;
 
 const now = () => new Date().toISOString();
@@ -69,7 +71,7 @@ export const App = () => {
       sess = loginResp.data;
       setSession(sess);
     } catch (err) {
-      setMessage("ログイン失敗!");
+      setMessage("ログイン失敗🤔");
       return;
     }
 
@@ -121,15 +123,15 @@ export const App = () => {
         console.error(err);
       }
     }
-    setMessage("フォローバック完了!");
+    setMessage("フォローバック完了🎉");
     setFollowedBack(true);
   }, [notFollowed]);
 
   return (
-    <>
+    <div className={styles.container}>
       <h1 className={styles.title}>Bluesky Follow Back All</h1>
-      <div>
-        <div>{message}</div>
+      <div className={styles.main}>
+        <div className={styles.message}>{message}</div>
         {session === undefined && (
           <LoginForm onClickLogin={onClickLogin}></LoginForm>
         )}
@@ -148,7 +150,7 @@ export const App = () => {
         {fetchedFollowers && notFollowed.length === 0 && !followedBack && (
           <div>全員フォロー済み🎉</div>
         )}
-        <div>
+        <div className={styles.followers}>
           {followers.map((actor) => (
             <FollowerView
               key={actor.did}
@@ -158,6 +160,13 @@ export const App = () => {
           ))}
         </div>
       </div>
-    </>
+      {fetchedFollowers && (
+        <div className={styles.footer}>
+          <a href="https://github.com/jiftechnify/bsky-follow-back-all">
+            <img src={octocat} width={20} height={20} />
+          </a>
+        </div>
+      )}
+    </div>
   );
 };

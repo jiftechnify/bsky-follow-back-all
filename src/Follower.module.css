@@ -2,19 +2,33 @@
   display: grid;
   grid-template-areas: "avatar name";
   grid-template-columns: 40px 1fr;
-  column-gap: 8px;
-  height: 40px;
+  column-gap: 12px;
+  height: 48px;
   align-items: center;
 }
 
-
 .avatarArea {
   grid-area: avatar;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.avatar {
+  border-radius: 50%;
+  border: solid 1px #dbe6e7;
+}
+
+.avatarPlc {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: solid 1px #dbe6e7;
 }
 
 .nameArea {
-  display: flex;
   grid-area: name;
+  display: flex;
 }
 
 .displayName {
@@ -24,6 +38,7 @@
 .handle {
   margin-left: 4px;
   font-size: 0.8em;
+  color: #718081;
 }
 
 .following {
