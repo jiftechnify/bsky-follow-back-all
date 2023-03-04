@@ -1,0 +1,33 @@
+.container {
+  display: grid;
+  grid-template-areas: "avatar name";
+  grid-template-columns: 40px 1fr;
+  column-gap: 8px;
+  height: 40px;
+  align-items: center;
+}
+
+
+.avatarArea {
+  grid-area: avatar;
+}
+
+.nameArea {
+  display: flex;
+  grid-area: name;
+}
+
+.displayName {
+  font-weight: bold;
+}
+
+.handle {
+  margin-left: 4px;
+  font-size: 0.8em;
+}
+
+.following {
+  margin-left: 4px;
+  font-size: 0.8em;
+  color: #0c9fe9;
+}

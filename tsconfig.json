@@ -1,12 +1,22 @@
 {
-  // https://github.com/tsconfig/bases/blob/main/bases/strictest.json
   "extends": "@tsconfig/strictest/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
-    "module": "ES2022",
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "skipLibCheck": true,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
     "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "noEmit": true,
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src", ".eslintrc.js", "vite.config.ts"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }
