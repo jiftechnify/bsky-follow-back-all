@@ -1,8 +1,8 @@
 .container {
   display: grid;
   grid-template-areas: "avatar name";
-  grid-template-columns: 40px 1fr;
-  column-gap: 12px;
+  grid-template-columns: 48px 1fr;
+  column-gap: 4px;
   height: 48px;
   align-items: center;
 }
@@ -10,21 +10,32 @@
 .avatarArea {
   grid-area: avatar;
   display: flex;
-  align-items: center;
   margin: 0;
 }
 
-.avatar {
+.avatarWrap {
+  width: 40px;
   height: 40px;
+  padding: 2px;
+  margin: 4px 0;
   border-radius: 50%;
-  border: solid 1px #dbe6e7;
+  background-color: #dbe6e7;
 }
 
-.avatarPlc {
+.avatarWrapFollowing {
+  width: 40px;
+  height: 40px;
+  padding: 2px;
+  margin: 4px 0;
+  border-radius: 50%;
+  background: linear-gradient(142deg, rgba(0,162,230,1) 0%, rgba(2,203,251,1) 70%, rgba(52,222,255,1) 100%);
+}
+
+.avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: solid 1px #dbe6e7;
+  background-color: #fff;
 }
 
 .nameArea {

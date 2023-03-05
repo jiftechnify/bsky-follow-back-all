@@ -21,12 +21,23 @@
   color: #fff;
   background: rgb(0,162,230);
   background: linear-gradient(142deg, rgba(0,162,230,1) 0%, rgba(2,203,251,1) 70%, rgba(52,222,255,1) 100%);
-  filter: brightness(0.95);
+  
   transition: filter 0.25s;
 }
 
 .followAll:hover {
   filter: brightness(1.05);
+}
+
+.followAll[disabled] {
+  background: rgb(0,162,230);
+  background: linear-gradient(142deg, rgba(0,162,230,1) 0%, rgba(2,203,251,1) 70%, rgba(52,222,255,1) 100%);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.followAll[disabled]:hover {
+  filter: none;
 }
 
 .followers {
@@ -35,6 +46,8 @@
   text-align: start;
 }
 
-.footer {
-  margin-top: 32px;
+.linkToRepo {
+  position: sticky;
+  text-align: right;
+  bottom: 8px;
 }

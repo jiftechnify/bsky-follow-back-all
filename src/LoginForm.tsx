@@ -1,12 +1,16 @@
 import { useState } from "react";
-import styles from './LoginForm.module.css';
+import styles from "./LoginForm.module.css";
 import type { Crendentials } from "./types";
 
 type LoginFormProps = {
   onClickLogin: (creds: Crendentials) => void;
+  loginInProgress: boolean;
 };
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onClickLogin }) => {
+export const LoginForm: React.FC<LoginFormProps> = ({
+  onClickLogin,
+  loginInProgress,
+}) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -26,7 +30,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickLogin }) => {
           onChange={(e) => setPassword(e.target.value)}
         ></input>
       </div>
-      <button className={styles.btnLogin} type="button" onClick={() => onClickLogin({ email, password })}>
+      <button
+        className={styles.btnLogin}
+        type="button"
+        onClick={() => onClickLogin({ email, password })}
+        disabled={loginInProgress}
+      >
         Login
       </button>
     </form>
