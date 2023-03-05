@@ -1,15 +1,34 @@
-import { AppBskyActorRef, AtpAgent, AtpSessionData } from "@atproto/api";
-import { useCallback, useMemo, useState } from "react";
+import {
+  AppBskyActorRef,
+  AtpAgent,
+  AtpSessionData,
+  AtpSessionEvent
+} from "@atproto/api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FollowerView } from "./Follower";
 import { LoginForm } from "./LoginForm";
 import type { Crendentials } from "./types";
+
+import { MdLogout } from "react-icons/md";
 
 import styles from "./App.module.css";
 import octocat from "./assets/github-mark.svg";
 
 type GraphActor = AppBskyActorRef.WithInfo;
 
-const atpAgent = new AtpAgent({ service: "https://bsky.social" });
+const BSKY_SESS_KEY = "bsky_sess";
+
+const atpAgent = new AtpAgent({
+  service: "https://bsky.social",
+  persistSession: (
+    _: AtpSessionEvent,
+    session: AtpSessionData | undefined
+  ) => {
+    if (session !== undefined) {
+      localStorage.setItem(BSKY_SESS_KEY, JSON.stringify(session));
+    }
+  },
+});
 
 const bsky = atpAgent.api.app.bsky;
 
@@ -51,6 +70,8 @@ const getFollowings = async (sess: AtpSessionData) => {
 
 type AppState =
   | "initial"
+  | "resumingSession"
+  | "beforeLogin"
   | "loginInProgress"
   | "loginFailed"
   | "fetchFollowersInProgress"
@@ -62,22 +83,51 @@ type AppState =
 const messageForState = (s: AppState): string => {
   switch (s) {
     case "initial":
+    case "beforeLogin":
       return "";
+
     case "loginInProgress":
+    case "resumingSession":
       return "ログイン中…";
+
     case "loginFailed":
       return "ログイン失敗🤔";
+
     case "fetchFollowersInProgress":
       return "フォロワーを取得中…";
+
     case "fetchedFollowers":
       return "フォロワー取得完了";
+
     case "fetchFollowersFailed":
       return "フォロワー取得失敗😵";
+
     case "followBackInProgress":
       return "フォローバック中…";
+
     case "followedBack":
       return "フォローバック完了🎉";
   }
+};
+
+const notLoggedIn = (s: AppState): boolean => {
+  const notLoggedInStates: AppState[] = [
+    "beforeLogin",
+    "loginInProgress",
+    "loginFailed",
+  ];
+  return notLoggedInStates.includes(s);
+};
+
+const loggedIn = (s: AppState): boolean => {
+  const notLoggedInStates: AppState[] = [
+    "fetchFollowersInProgress",
+    "fetchedFollowers",
+    "fetchFollowersFailed",
+    "followBackInProgress",
+    "followedBack",
+  ];
+  return notLoggedInStates.includes(s);
 };
 
 const hasFetchedFollowers = (s: AppState): boolean => {
@@ -89,38 +139,84 @@ const hasFetchedFollowers = (s: AppState): boolean => {
 };
 
 export const App = () => {
-  const [session, setSession] = useState<AtpSessionData | undefined>(undefined);
+  const session = useRef<AtpSessionData | undefined>(undefined);
+
+  const [appState, setAppState] = useState<AppState>("initial");
 
   const [followers, setFollowers] = useState<GraphActor[]>([]);
   const [followings, setFollowings] = useState<GraphActor[]>([]);
 
-  const [appState, setAppState] = useState<AppState>("initial");
-
-  const onClickLogin = async (creds: Crendentials) => {
-    setAppState("loginInProgress");
-
-    let sess: AtpSessionData | undefined;
-    try {
-      const loginResp = await atpAgent.login({
-        identifier: creds.email,
-        password: creds.password,
-      });
-      sess = loginResp.data;
-      setSession(sess);
-    } catch (err) {
-      setAppState("loginFailed");
+  const fetchFollowers = async () => {
+    if (session.current === undefined) {
+      console.error("session has not started");
       return;
     }
 
     setAppState("fetchFollowersInProgress");
     const [followersRes, followingsRes] = await Promise.all([
-      getFollowers(sess as AtpSessionData),
-      getFollowings(sess as AtpSessionData),
+      getFollowers(session.current),
+      getFollowings(session.current),
     ]);
 
     setFollowers(followersRes);
     setFollowings(followingsRes);
     setAppState("fetchedFollowers");
+  };
+
+  const onClickLogin = async (creds: Crendentials) => {
+    setAppState("loginInProgress");
+
+    try {
+      const loginResp = await atpAgent.login({
+        identifier: creds.email,
+        password: creds.password,
+      });
+      session.current = loginResp.data;
+    } catch (err) {
+      console.error("failed to login:", err);
+      setAppState("loginFailed");
+      return;
+    }
+
+    await fetchFollowers();
+  };
+
+  // 起動直後に、セッションが保存されていれば復元
+  useEffect(() => {
+    if (appState !== "initial") {
+      return;
+    }
+    const resumeSess = async () => {
+      const jsonBskySess = localStorage.getItem(BSKY_SESS_KEY);
+      if (jsonBskySess === null) {
+        setAppState("beforeLogin");
+        return;
+      }
+
+      setAppState("resumingSession");
+      try {
+        const sess = JSON.parse(jsonBskySess) as AtpSessionData;
+        await atpAgent.resumeSession(sess);
+        session.current = sess;
+      } catch (err) {
+        console.error("failed to resume session:", err);
+        setAppState("beforeLogin");
+        return;
+      }
+
+      await fetchFollowers();
+    };
+    resumeSess().catch((err) => console.error(err));
+  }, []);
+
+  const onClickLogout = () => {
+    session.current = undefined;
+    localStorage.removeItem(BSKY_SESS_KEY);
+
+    setFollowers([]);
+    setFollowings([]);
+
+    setAppState("beforeLogin");
   };
 
   const followingsDIDSet = useMemo(() => {
@@ -143,7 +239,7 @@ export const App = () => {
 
   const followBackAll = useCallback(
     async (notFollowedActors: GraphActor[]) => {
-      if (session === undefined) {
+      if (session.current === undefined) {
         return;
       }
       setAppState("followBackInProgress");
@@ -152,7 +248,7 @@ export const App = () => {
         console.log(`following ${target.handle}...`);
         try {
           await bsky.graph.follow.create(
-            { did: session.did },
+            { did: session.current.did },
             {
               subject: {
                 did: target.did,
@@ -175,9 +271,10 @@ export const App = () => {
     <>
       <div className={styles.container}>
         <h1 className={styles.title}>Bluesky Follow Back All</h1>
+
         <div className={styles.main}>
           <div className={styles.message}>{messageForState(appState)}</div>
-          {session === undefined && (
+          {notLoggedIn(appState) && (
             <LoginForm
               onClickLogin={onClickLogin}
               loginInProgress={appState === "loginInProgress"}
@@ -209,6 +306,15 @@ export const App = () => {
           </div>
         </div>
       </div>
+      {loggedIn(appState) && (
+        <button
+          className={styles.btnLogout}
+          type="button"
+          onClick={onClickLogout}
+        >
+          <MdLogout />
+        </button>
+      )}
       <div className={styles.linkToRepo}>
         <a href="https://github.com/jiftechnify/bsky-follow-back-all">
           <img src={octocat} width={20} height={20} />

@@ -46,6 +46,14 @@
   text-align: start;
 }
 
+.btnLogout {
+  position: absolute;
+  top: 20px;
+  right: 8px;
+  padding: 0;
+  background: none;
+}
+
 .linkToRepo {
   position: fixed;
   bottom: 8px;
