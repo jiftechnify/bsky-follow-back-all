@@ -46,12 +46,30 @@
   text-align: start;
 }
 
-.btnLogout {
+.toolBtns {
   position: absolute;
-  top: 20px;
+  top: 12px;
   right: 8px;
-  padding: 0;
+  display: flex;
+}
+
+.btnLang {
+  padding: 8px;
+  font-weight: 500;
+  font-family: inherit;
   background: none;
+  border: none;
+}
+
+.btnLogout {
+  padding: 8px;
+  background: none;
+  border: none;
+}
+
+.btnLogoutIcon {
+  position: relative;
+  top: 2px;
 }
 
 .linkToRepo {

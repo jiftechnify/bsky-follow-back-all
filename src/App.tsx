@@ -5,6 +5,7 @@ import {
   AtpSessionEvent
 } from "@atproto/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FollowerView } from "./Follower";
 import { LoginForm } from "./LoginForm";
 import type { Crendentials } from "./types";
@@ -16,16 +17,14 @@ import octocat from "./assets/github-mark.svg";
 
 type GraphActor = AppBskyActorRef.WithInfo;
 
-const BSKY_SESS_KEY = "bsky_sess";
+const LS_BSKY_SESS_KEY = "bsky_sess";
+const LS_UI_LANG_KEY = "ui_lang";
 
 const atpAgent = new AtpAgent({
   service: "https://bsky.social",
-  persistSession: (
-    _: AtpSessionEvent,
-    session: AtpSessionData | undefined
-  ) => {
+  persistSession: (_: AtpSessionEvent, session: AtpSessionData | undefined) => {
     if (session !== undefined) {
-      localStorage.setItem(BSKY_SESS_KEY, JSON.stringify(session));
+      localStorage.setItem(LS_BSKY_SESS_KEY, JSON.stringify(session));
     }
   },
 });
@@ -80,33 +79,33 @@ type AppState =
   | "followBackInProgress"
   | "followedBack";
 
-const messageForState = (s: AppState): string => {
+const messageKeyForState = (s: AppState): string => {
   switch (s) {
     case "initial":
     case "beforeLogin":
-      return "";
+      return "message.blank";
 
     case "loginInProgress":
     case "resumingSession":
-      return "ログイン中…";
+      return "message.loginInProgress";
 
     case "loginFailed":
-      return "ログイン失敗🤔";
+      return "message.loginFailed";
 
     case "fetchFollowersInProgress":
-      return "フォロワーを取得中…";
+      return "message.fetchingFollowers";
 
     case "fetchedFollowers":
-      return "フォロワー取得完了";
+      return "message.fetchedFollowers";
 
     case "fetchFollowersFailed":
-      return "フォロワー取得失敗😵";
+      return "message.fetchFollowersFailed";
 
     case "followBackInProgress":
-      return "フォローバック中…";
+      return "message.followingBack";
 
     case "followedBack":
-      return "フォローバック完了🎉";
+      return "message.followedBack";
   }
 };
 
@@ -138,6 +137,16 @@ const hasFetchedFollowers = (s: AppState): boolean => {
   return hasFetchedStates.includes(s);
 };
 
+type Language = "ja" | "en";
+const nextLang = (lang: Language): Language => {
+  switch (lang) {
+    case "ja":
+      return "en";
+    case "en":
+      return "ja";
+  }
+};
+
 export const App = () => {
   const session = useRef<AtpSessionData | undefined>(undefined);
 
@@ -145,6 +154,8 @@ export const App = () => {
 
   const [followers, setFollowers] = useState<GraphActor[]>([]);
   const [followings, setFollowings] = useState<GraphActor[]>([]);
+
+  const { t, i18n } = useTranslation();
 
   const fetchFollowers = async () => {
     if (session.current === undefined) {
@@ -181,13 +192,23 @@ export const App = () => {
     await fetchFollowers();
   };
 
-  // 起動直後に、セッションが保存されていれば復元
+  // tasks just after launch
+  // - restore language setting
+  // - resume bsky session (if session is stored)
   useEffect(() => {
     if (appState !== "initial") {
       return;
     }
+
+    const restoreLang = () => {
+      const lang = localStorage.getItem(LS_UI_LANG_KEY);
+      if (lang !== null) {
+        i18n.changeLanguage(lang);
+      }
+    };
+
     const resumeSess = async () => {
-      const jsonBskySess = localStorage.getItem(BSKY_SESS_KEY);
+      const jsonBskySess = localStorage.getItem(LS_BSKY_SESS_KEY);
       if (jsonBskySess === null) {
         setAppState("beforeLogin");
         return;
@@ -206,12 +227,14 @@ export const App = () => {
 
       await fetchFollowers();
     };
+
+    restoreLang();
     resumeSess().catch((err) => console.error(err));
   }, []);
 
   const onClickLogout = () => {
     session.current = undefined;
-    localStorage.removeItem(BSKY_SESS_KEY);
+    localStorage.removeItem(LS_BSKY_SESS_KEY);
 
     setFollowers([]);
     setFollowings([]);
@@ -267,13 +290,20 @@ export const App = () => {
     [notFollowed]
   );
 
+  const onClickLang = () => {
+    const lang = nextLang(i18n.language as Language);
+    i18n.changeLanguage(lang);
+    localStorage.setItem(LS_UI_LANG_KEY, lang)
+  };
+
   return (
     <>
       <div className={styles.container}>
         <h1 className={styles.title}>Bluesky Follow Back All</h1>
-
         <div className={styles.main}>
-          <div className={styles.message}>{messageForState(appState)}</div>
+          <div className={styles.message}>
+            {t(messageKeyForState(appState))}
+          </div>
           {notLoggedIn(appState) && (
             <LoginForm
               onClickLogin={onClickLogin}
@@ -282,19 +312,21 @@ export const App = () => {
           )}
           {hasFetchedFollowers(appState) && notFollowed.length > 0 && (
             <div>
-              <div>未フォローバックユーザ数: {notFollowed.length}</div>
+              <div>
+                {t("text.numNotFollowing")} {notFollowed.length}
+              </div>
               <button
                 className={styles.followAll}
                 type="button"
                 onClick={() => followBackAll(notFollowed)}
                 disabled={appState === "followBackInProgress"}
               >
-                すべてフォロー
+                {t("ui.followAll")}
               </button>
             </div>
           )}
           {hasFetchedFollowers(appState) && notFollowed.length === 0 && (
-            <div>全員フォロー済み🎉</div>
+            <div>{t("text.alreadyFollowingAll")}</div>
           )}
           <div className={styles.followers}>
             {notFollowed.map((actor) => (
@@ -306,15 +338,20 @@ export const App = () => {
           </div>
         </div>
       </div>
-      {loggedIn(appState) && (
-        <button
-          className={styles.btnLogout}
-          type="button"
-          onClick={onClickLogout}
-        >
-          <MdLogout />
+      <div className={styles.toolBtns}>
+        <button className={styles.btnLang} type="button" onClick={onClickLang}>
+          {i18n.language}
         </button>
-      )}
+        {loggedIn(appState) && (
+          <button
+            className={styles.btnLogout}
+            type="button"
+            onClick={onClickLogout}
+          >
+            <MdLogout className={styles.btnLogoutIcon} />
+          </button>
+        )}
+      </div>
       <div className={styles.linkToRepo}>
         <a href="https://github.com/jiftechnify/bsky-follow-back-all">
           <img src={octocat} width={20} height={20} />

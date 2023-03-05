@@ -1,0 +1,23 @@
+{
+  "message": {
+    "blank": "",
+    "loginInProgress": "Logging in…",
+    "loginFailed": "Failed to log in 🤔",
+    "fetchingFollowers": "Searching for your followers…",
+    "fetchedFollowers": "Got a list of your followers",
+    "fetchFollowersFailed": "Failed to get a list of your followers 😵",
+    "followingBack": "Following back…",
+    "followedBack": "Finished following back 🎉"
+  },
+  "text": {
+    "numNotFollowing": "#followers you are not following:",
+    "alreadyFollowingAll": "You are already following all followers🎉",
+    "following": "Following"
+  },
+  "ui": {
+    "loginIdent": "E-mail Address or Handle",
+    "loginPassword": "Password",
+    "login": "Log in",
+    "followAll": "Follow All"
+  }
+}

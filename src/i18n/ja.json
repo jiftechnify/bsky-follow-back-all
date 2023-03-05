@@ -1,0 +1,23 @@
+{
+  "message": {
+    "blank": "",
+    "loginInProgress": "ログイン中…",
+    "loginFailed": "ログイン失敗🤔",
+    "fetchingFollowers": "フォロワーを取得中…",
+    "fetchedFollowers": "フォロワー取得完了",
+    "fetchFollowersFailed": "フォロワー取得失敗😵",
+    "followingBack": "フォローバック中…",
+    "followedBack": "フォローバック完了🎉"
+  },
+  "text": {
+    "numNotFollowing": "未フォローバックユーザ数",
+    "alreadyFollowingAll": "全員フォロー済み🎉",
+    "following": "フォロー済"
+  },
+  "ui": {
+    "loginIdent": "メールアドレス or ハンドル",
+    "loginPassword": "パスワード",
+    "login": "ログイン",
+    "followAll": "すべてフォロー"
+  }
+}

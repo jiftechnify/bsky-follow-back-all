@@ -1,6 +1,8 @@
 import { useState } from "react";
-import styles from "./LoginForm.module.css";
+import { useTranslation } from "react-i18next";
 import type { Crendentials } from "./types";
+
+import styles from "./LoginForm.module.css";
 
 type LoginFormProps = {
   onClickLogin: (creds: Crendentials) => void;
@@ -11,6 +13,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onClickLogin,
   loginInProgress,
 }) => {
+  const {t} = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -19,14 +22,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       <div>
         <input
           type="email"
-          placeholder="E-mail Address or Handle"
+          placeholder={t('ui.loginIdent') ?? ''}
           onChange={(e) => setEmail(e.target.value)}
         ></input>
       </div>
       <div>
         <input
           type="password"
-          placeholder="Password"
+          placeholder={t('ui.loginPassword') ?? ''}
           onChange={(e) => setPassword(e.target.value)}
         ></input>
       </div>
@@ -36,7 +39,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         onClick={() => onClickLogin({ email, password })}
         disabled={loginInProgress}
       >
-        Login
+        {t('ui.login')}
       </button>
     </form>
   );

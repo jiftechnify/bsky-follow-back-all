@@ -1,5 +1,7 @@
-import styles from "./Follower.module.css";
+import { useTranslation } from 'react-i18next';
 import type { BskyGraphActor } from "./types";
+
+import styles from "./Follower.module.css";
 
 type FollowerViewProps = {
   actor: BskyGraphActor;
@@ -10,6 +12,7 @@ export const FollowerView: React.FC<FollowerViewProps> = ({
   actor,
   isFollowing,
 }) => {
+  const {t} = useTranslation();
   const { avatar, displayName, handle } = actor;
   const avatarWrapClass = isFollowing ? styles.avatarWrapFollowing : styles.avatarWrap
 
@@ -29,7 +32,7 @@ export const FollowerView: React.FC<FollowerViewProps> = ({
           {displayName ?? `${handle.replaceAll(".bsky.social", "")}`}
         </span>
         <span className={styles.handle}>{handle}</span>
-        {isFollowing && <span className={styles.following}>フォロー済</span>}
+        {isFollowing && <span className={styles.following}>{t('text.following')}</span>}
       </div>
     </div>
   );
