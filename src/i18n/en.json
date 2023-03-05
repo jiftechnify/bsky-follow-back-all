@@ -10,7 +10,7 @@
     "followedBack": "Finished following back 🎉"
   },
   "text": {
-    "numNotFollowing": "#followers you are not following:",
+    "numNotFollowing": "# of followers you are not following:",
     "alreadyFollowingAll": "You are already following all followers🎉",
     "following": "Following"
   },

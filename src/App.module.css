@@ -17,16 +17,25 @@
 }
 
 .followAll {
+  height: 46px;
   margin: 8px 0;
+  padding: 10px 20px;
   color: #fff;
   background: rgb(0,162,230);
   background: linear-gradient(142deg, rgba(0,162,230,1) 0%, rgba(2,203,251,1) 70%, rgba(52,222,255,1) 100%);
-  
+  border-radius: 8px;
+  border: none;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+
+  filter: brightness(1.0) drop-shadow(2px 2px 5px #0003);
   transition: filter 0.25s;
 }
 
 .followAll:hover {
-  filter: brightness(1.05);
+  filter: brightness(1.05) drop-shadow(2px 2px 5px #0003);
 }
 
 .followAll[disabled] {
@@ -59,12 +68,14 @@
   font-family: inherit;
   background: none;
   border: none;
+  cursor: pointer;
 }
 
 .btnLogout {
   padding: 8px;
   background: none;
   border: none;
+  cursor: pointer;
 }
 
 .btnLogoutIcon {
