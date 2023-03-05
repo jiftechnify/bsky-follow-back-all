@@ -47,7 +47,7 @@
 }
 
 .linkToRepo {
-  position: sticky;
-  text-align: right;
+  position: fixed;
   bottom: 8px;
+  right: 8px;
 }
