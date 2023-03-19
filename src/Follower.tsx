@@ -29,9 +29,9 @@ export const FollowerView: React.FC<FollowerViewProps> = ({
       </div>
       <div className={styles.NameArea}>
         <span className={styles.displayName}>
-          {displayName ?? `${handle.replaceAll(".bsky.social", "")}`}
+          {displayName ?? handle}
         </span>
-        <span className={styles.handle}>{handle}</span>
+        {displayName && <span className={styles.handle}>{handle}</span>}
         {isFollowing && <span className={styles.following}>{t('text.following')}</span>}
       </div>
     </div>
