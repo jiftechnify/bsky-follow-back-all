@@ -1,8 +1,8 @@
 import {
-  AppBskyActorRef,
+  AppBskyActorDefs,
   AtpAgent,
   AtpSessionData,
-  AtpSessionEvent
+  AtpSessionEvent,
 } from "@atproto/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,7 +15,7 @@ import { MdLogout } from "react-icons/md";
 import styles from "./App.module.css";
 import octocat from "./assets/github-mark.svg";
 
-type GraphActor = AppBskyActorRef.WithInfo;
+type GraphActor = AppBskyActorDefs.ProfileView;
 
 const LS_BSKY_SESS_KEY = "bsky_sess";
 const LS_UI_LANG_KEY = "ui_lang";
@@ -39,8 +39,8 @@ const getFollowers = async (sess: AtpSessionData) => {
 
   while (true) {
     const resp = await bsky.graph.getFollowers({
-      user: sess.handle,
-      before: cursor,
+      actor: sess.handle,
+      cursor,
     });
     result.push(...resp.data.followers);
     if (!resp.data.cursor || resp.data.followers.length === 0) {
@@ -56,8 +56,8 @@ const getFollowings = async (sess: AtpSessionData) => {
 
   while (true) {
     const resp = await bsky.graph.getFollows({
-      user: sess.handle,
-      before: cursor,
+      actor: sess.handle,
+      cursor,
     });
     result.push(...resp.data.follows);
     if (!resp.data.cursor || resp.data.follows.length === 0) {
@@ -271,12 +271,9 @@ export const App = () => {
         console.log(`following ${target.handle}...`);
         try {
           await bsky.graph.follow.create(
-            { did: session.current.did },
+            { repo: session.current.did },
             {
-              subject: {
-                did: target.did,
-                declarationCid: target.declaration.cid,
-              },
+              subject: target.did,
               createdAt: now(),
             }
           );
@@ -293,7 +290,7 @@ export const App = () => {
   const onClickLang = () => {
     const lang = nextLang(i18n.language as Language);
     i18n.changeLanguage(lang);
-    localStorage.setItem(LS_UI_LANG_KEY, lang)
+    localStorage.setItem(LS_UI_LANG_KEY, lang);
   };
 
   return (
