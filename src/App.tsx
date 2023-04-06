@@ -2,7 +2,7 @@ import {
   AppBskyActorDefs,
   AtpAgent,
   AtpSessionData,
-  AtpSessionEvent,
+  AtpSessionEvent
 } from "@atproto/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -201,9 +201,12 @@ export const App = () => {
     }
 
     const restoreLang = () => {
-      const lang = localStorage.getItem(LS_UI_LANG_KEY);
-      if (lang !== null) {
-        i18n.changeLanguage(lang);
+      const lastUsedLang = localStorage.getItem(LS_UI_LANG_KEY);
+      if (lastUsedLang !== null) {
+        i18n.changeLanguage(lastUsedLang);
+      } else {
+        const systemLang = window.navigator.language
+        i18n.changeLanguage(systemLang === 'ja' ? 'ja' : 'en');
       }
     };
 
