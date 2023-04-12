@@ -2,7 +2,7 @@ import {
   AppBskyActorDefs,
   AtpAgent,
   AtpSessionData,
-  AtpSessionEvent
+  AtpSessionEvent,
 } from "@atproto/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -33,38 +33,54 @@ const bsky = atpAgent.api.app.bsky;
 
 const now = () => new Date().toISOString();
 
-const getFollowers = async (sess: AtpSessionData) => {
-  let cursor = "";
-  const result: GraphActor[] = [];
-
-  while (true) {
-    const resp = await bsky.graph.getFollowers({
-      actor: sess.handle,
-      cursor,
-    });
-    result.push(...resp.data.followers);
-    if (!resp.data.cursor || resp.data.followers.length === 0) {
-      return result;
-    }
-    cursor = resp.data.cursor;
-  }
+type GetActorsResult = {
+  actors: GraphActor[];
+  cursor: string | undefined;
 };
 
-const getFollowings = async (sess: AtpSessionData) => {
+async function fetchAllActors(
+  step: (cursor: string) => Promise<GetActorsResult>
+): Promise<GraphActor[]> {
   let cursor = "";
-  const result: GraphActor[] = [];
+  const res: GraphActor[] = [];
 
   while (true) {
+    const resp = await step(cursor);
+    res.push(...resp.actors);
+    if (!resp.cursor || resp.actors.length === 0) {
+      return res;
+    }
+    cursor = resp.cursor;
+  }
+}
+
+const getFollowersStep = (
+  sess: AtpSessionData
+): ((cursor: string) => Promise<GetActorsResult>) => {
+  return async (cursor: string) => {
+    const resp = await bsky.graph.getFollowers({
+      actor: sess.handle,
+      cursor: cursor ?? "",
+    });
+    return { actors: resp.data.followers, cursor: resp.data.cursor };
+  };
+};
+
+const getFollowingsStep = (
+  sess: AtpSessionData
+): ((cursor: string) => Promise<GetActorsResult>) => {
+  return async (cursor: string) => {
     const resp = await bsky.graph.getFollows({
       actor: sess.handle,
-      cursor,
+      cursor: cursor ?? "",
     });
-    result.push(...resp.data.follows);
-    if (!resp.data.cursor || resp.data.follows.length === 0) {
-      return result;
-    }
-    cursor = resp.data.cursor;
-  }
+    return { actors: resp.data.follows, cursor: resp.data.cursor };
+  };
+};
+
+const getMutesStep = async (cursor: string): Promise<GetActorsResult> => {
+  const resp = await bsky.graph.getMutes({ cursor: cursor ?? "" });
+  return { actors: resp.data.mutes, cursor: resp.data.cursor };
 };
 
 type AppState =
@@ -154,6 +170,7 @@ export const App = () => {
 
   const [followers, setFollowers] = useState<GraphActor[]>([]);
   const [followings, setFollowings] = useState<GraphActor[]>([]);
+  const [mutes, setMutes] = useState<GraphActor[]>([]);
 
   const { t, i18n } = useTranslation();
 
@@ -164,13 +181,15 @@ export const App = () => {
     }
 
     setAppState("fetchFollowersInProgress");
-    const [followersRes, followingsRes] = await Promise.all([
-      getFollowers(session.current),
-      getFollowings(session.current),
+    const [followersRes, followingsRes, mutesRes] = await Promise.all([
+      fetchAllActors(getFollowersStep(session.current)),
+      fetchAllActors(getFollowingsStep(session.current)),
+      fetchAllActors(getMutesStep),
     ]);
 
     setFollowers(followersRes);
     setFollowings(followingsRes);
+    setMutes(mutesRes);
     setAppState("fetchedFollowers");
   };
 
@@ -205,8 +224,8 @@ export const App = () => {
       if (lastUsedLang !== null) {
         i18n.changeLanguage(lastUsedLang);
       } else {
-        const systemLang = window.navigator.language
-        i18n.changeLanguage(systemLang === 'ja' ? 'ja' : 'en');
+        const systemLang = window.navigator.language;
+        i18n.changeLanguage(systemLang === "ja" ? "ja" : "en");
       }
     };
 
@@ -241,6 +260,7 @@ export const App = () => {
 
     setFollowers([]);
     setFollowings([]);
+    setMutes([]);
 
     setAppState("beforeLogin");
   };
@@ -249,11 +269,20 @@ export const App = () => {
     return new Set(followings.map((actor) => actor.did));
   }, [followings]);
 
+  const mutesDIDSet = useMemo(() => {
+    return new Set(mutes.map((actor) => actor.did));
+  }, [mutes]);
+
   const { notFollowed, alreadyFollowed } = useMemo(() => {
     const notFollowed: GraphActor[] = [];
     const alreadyFollowed: GraphActor[] = [];
 
     followers.forEach((follower) => {
+      // exclude muted actors
+      if (mutesDIDSet.has(follower.did)) {
+        return;
+      }
+
       if (followingsDIDSet.has(follower.did)) {
         alreadyFollowed.push(follower);
       } else {
@@ -261,7 +290,7 @@ export const App = () => {
       }
     });
     return { notFollowed, alreadyFollowed };
-  }, [followers, followings]);
+  }, [followers, followingsDIDSet, mutesDIDSet]);
 
   const followBackAll = useCallback(
     async (notFollowedActors: GraphActor[]) => {
