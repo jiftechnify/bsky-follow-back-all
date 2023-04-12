@@ -60,7 +60,7 @@ const getFollowersStep = (
   return async (cursor: string) => {
     const resp = await bsky.graph.getFollowers({
       actor: sess.handle,
-      cursor: cursor ?? "",
+      cursor,
     });
     return { actors: resp.data.followers, cursor: resp.data.cursor };
   };
@@ -72,14 +72,14 @@ const getFollowingsStep = (
   return async (cursor: string) => {
     const resp = await bsky.graph.getFollows({
       actor: sess.handle,
-      cursor: cursor ?? "",
+      cursor,
     });
     return { actors: resp.data.follows, cursor: resp.data.cursor };
   };
 };
 
 const getMutesStep = async (cursor: string): Promise<GetActorsResult> => {
-  const resp = await bsky.graph.getMutes({ cursor: cursor ?? "" });
+  const resp = await bsky.graph.getMutes({ cursor });
   return { actors: resp.data.mutes, cursor: resp.data.cursor };
 };
 
