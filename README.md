@@ -5,4 +5,4 @@ https://jiftechnify.github.io/bsky-follow-back-all/
 
 ## Other Bluesky Tools by Me
 
-- [Blue Mirage](https://jiftechnify.github.io/blue-mirage/) - A tiny web app to "copy" the someone else's follow list on Bluesky Social.
+- [Blue Mirage](https://github.com/jiftechnfy/blue-mirage) - A tiny web app to "copy" the someone else's follow list on Bluesky Social.
