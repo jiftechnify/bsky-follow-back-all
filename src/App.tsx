@@ -1,8 +1,8 @@
 import {
   AppBskyActorDefs,
-  AtpAgent,
   AtpSessionData,
   AtpSessionEvent,
+  BskyAgent,
 } from "@atproto/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,7 +20,7 @@ type GraphActor = AppBskyActorDefs.ProfileView;
 const LS_BSKY_SESS_KEY = "bsky_sess";
 const LS_UI_LANG_KEY = "ui_lang";
 
-const atpAgent = new AtpAgent({
+const bskyAgent = new BskyAgent({
   service: "https://bsky.social",
   persistSession: (_: AtpSessionEvent, session: AtpSessionData | undefined) => {
     if (session !== undefined) {
@@ -29,9 +29,6 @@ const atpAgent = new AtpAgent({
   },
 });
 
-const bsky = atpAgent.api.app.bsky;
-
-const now = () => new Date().toISOString();
 
 type GetActorsResult = {
   actors: GraphActor[];
@@ -58,7 +55,7 @@ const getFollowersStep = (
   sess: AtpSessionData
 ): ((cursor: string) => Promise<GetActorsResult>) => {
   return async (cursor: string) => {
-    const resp = await bsky.graph.getFollowers({
+    const resp = await bskyAgent.getFollowers({
       actor: sess.handle,
       cursor,
     });
@@ -70,7 +67,7 @@ const getFollowingsStep = (
   sess: AtpSessionData
 ): ((cursor: string) => Promise<GetActorsResult>) => {
   return async (cursor: string) => {
-    const resp = await bsky.graph.getFollows({
+    const resp = await bskyAgent.getFollows({
       actor: sess.handle,
       cursor,
     });
@@ -79,7 +76,7 @@ const getFollowingsStep = (
 };
 
 const getMutesStep = async (cursor: string): Promise<GetActorsResult> => {
-  const resp = await bsky.graph.getMutes({ cursor });
+  const resp = await bskyAgent.app.bsky.graph.getMutes({ cursor });
   return { actors: resp.data.mutes, cursor: resp.data.cursor };
 };
 
@@ -197,7 +194,7 @@ export const App = () => {
     setAppState("loginInProgress");
 
     try {
-      const loginResp = await atpAgent.login({
+      const loginResp = await bskyAgent.login({
         identifier: creds.email,
         password: creds.password,
       });
@@ -239,7 +236,7 @@ export const App = () => {
       setAppState("resumingSession");
       try {
         const sess = JSON.parse(jsonBskySess) as AtpSessionData;
-        await atpAgent.resumeSession(sess);
+        await bskyAgent.resumeSession(sess);
         session.current = sess;
       } catch (err) {
         console.error("failed to resume session:", err);
@@ -302,13 +299,7 @@ export const App = () => {
       for (const target of notFollowedActors) {
         console.log(`following ${target.handle}...`);
         try {
-          await bsky.graph.follow.create(
-            { repo: session.current.did },
-            {
-              subject: target.did,
-              createdAt: now(),
-            }
-          );
+          await bskyAgent.follow(target.did);
           setFollowings((prev) => [...prev, target]);
         } catch (err) {
           console.error(err);
