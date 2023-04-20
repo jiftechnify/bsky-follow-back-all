@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@atproto/api": "^0.2.0",
+    "@atproto/xrpc": "^0.1.0",
     "i18next": "^22.4.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

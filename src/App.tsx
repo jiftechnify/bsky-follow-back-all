@@ -4,6 +4,7 @@ import {
   AtpSessionEvent,
   BskyAgent,
 } from "@atproto/api";
+import { ResponseType, XRPCError } from "@atproto/xrpc";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FollowerView } from "./Follower";
@@ -29,6 +30,55 @@ const bskyAgent = new BskyAgent({
   },
 });
 
+const isXRPCError = (err: unknown): err is XRPCError => {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "status" in err &&
+    "error" in err &&
+    "success" in err
+  );
+};
+
+const resumeSession = async (): Promise<AtpSessionData | undefined> => {
+  const jsonBskySess = localStorage.getItem(LS_BSKY_SESS_KEY);
+  if (jsonBskySess === null) {
+    return undefined;
+  }
+
+  console.log("resuming session...");
+  try {
+    const sess = JSON.parse(jsonBskySess) as AtpSessionData;
+    await bskyAgent.resumeSession(sess);
+    console.log("resumed session");
+    return sess;
+  } catch (err) {
+    console.error("failed to resume session:", err);
+    return undefined;
+  }
+};
+
+const withResumeSession = async <T extends unknown>(
+  fn: () => Promise<T>,
+  maxRetry = 3,
+  retryCnt = 0
+): Promise<T> => {
+  try {
+    return await fn();
+  } catch (err) {
+    if (isXRPCError(err) && err.status === ResponseType.AuthRequired) {
+      if (retryCnt !== maxRetry) {
+        console.log("auth required -> resume session and retry");
+        await resumeSession();
+        return withResumeSession(fn, maxRetry, retryCnt + 1);
+      } else {
+        console.error("exceeded max retry count");
+        throw err;
+      }
+    }
+    throw err;
+  }
+};
 
 type GetActorsResult = {
   actors: GraphActor[];
@@ -55,10 +105,12 @@ const getFollowersStep = (
   sess: AtpSessionData
 ): ((cursor: string) => Promise<GetActorsResult>) => {
   return async (cursor: string) => {
-    const resp = await bskyAgent.getFollowers({
-      actor: sess.handle,
-      cursor,
-    });
+    const resp = await withResumeSession(() =>
+      bskyAgent.getFollowers({
+        actor: sess.handle,
+        cursor,
+      })
+    );
     return { actors: resp.data.followers, cursor: resp.data.cursor };
   };
 };
@@ -67,16 +119,20 @@ const getFollowingsStep = (
   sess: AtpSessionData
 ): ((cursor: string) => Promise<GetActorsResult>) => {
   return async (cursor: string) => {
-    const resp = await bskyAgent.getFollows({
-      actor: sess.handle,
-      cursor,
-    });
+    const resp = await withResumeSession(() =>
+      bskyAgent.getFollows({
+        actor: sess.handle,
+        cursor,
+      })
+    );
     return { actors: resp.data.follows, cursor: resp.data.cursor };
   };
 };
 
 const getMutesStep = async (cursor: string): Promise<GetActorsResult> => {
-  const resp = await bskyAgent.app.bsky.graph.getMutes({ cursor });
+  const resp = await withResumeSession(() =>
+    bskyAgent.app.bsky.graph.getMutes({ cursor })
+  );
   return { actors: resp.data.mutes, cursor: resp.data.cursor };
 };
 
@@ -299,7 +355,7 @@ export const App = () => {
       for (const target of notFollowedActors) {
         console.log(`following ${target.handle}...`);
         try {
-          await bskyAgent.follow(target.did);
+          await withResumeSession(() => bskyAgent.follow(target.did));
           setFollowings((prev) => [...prev, target]);
         } catch (err) {
           console.error(err);
